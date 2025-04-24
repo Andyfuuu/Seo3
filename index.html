@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEPay魔儲 - 遊戲抽卡成本計算器</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .results-container {
+            margin-bottom: 2rem;
+        }
+
+        .result-section {
+            background: linear-gradient(145deg, #383838, #303030);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .cost-comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            background: #1e1e1e;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .cost-comparison-table th,
+        .cost-comparison-table td {
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .cost-comparison-table th {
+            background: #2d2d2d;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .savings {
+            color: var(--secondary-color);
+            font-weight: bold;
+        }
+
+        /* 動畫效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
+
+        .error-message {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .results-container {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* 表格樣式 */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .comparison-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+
+        /* 頁尾樣式 */
+        .footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 1rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* 添加微妙的光暈動畫 */
+        @keyframes glow {
+            0% { box-shadow: 0 0 5px rgba(0, 188, 212, 0.2); }
+            50% { box-shadow: 0 0 20px rgba(0, 188, 212, 0.3); }
+            100% { box-shadow: 0 0 5px rgba(0, 188, 212, 0.2); }
+        }
+
+        .calculator {
+            animation: glow 3s infinite;
+        }
+
+        /* 在現有的樣式中添加或更新以下內容 */
+        select {
+            background: linear-gradient(145deg, #2a2a2a, #232323);
+            color: #e0e0e0;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300bcd4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1em;
+            padding-right: 2.5em;
+        }
+
+        /* 下拉選單選項樣式 */
+        select option {
+            background-color: #2d2d2d;
+            color: #e0e0e0;
+            padding: 12px;
+        }
+
+        /* 下拉選單hover效果 */
+        select:hover {
+            border-color: #00bcd4;
+            box-shadow: 0 0 10px rgba(0, 188, 212, 0.2);
+        }
+
+        /* 下拉選單focus效果 */
+        select:focus {
+            border-color: #00bcd4;
+            box-shadow: 0 0 20px rgba(0, 188, 212, 0.2);
+            outline: none;
+        }
+
+        /* 下拉選單選項hover效果 */
+        select option:hover,
+        select option:focus,
+        select option:active,
+        select option:checked {
+            background: linear-gradient(145deg, #383838, #303030);
+            background-color: #383838;
+            color: #00bcd4;
+        }
+
+        /* 針對 Webkit 瀏覽器（Chrome、Safari等）的特殊樣式 */
+        select::-webkit-scrollbar {
+            width: 8px;
+            background-color: #2d2d2d;
+        }
+
+        select::-webkit-scrollbar-thumb {
+            background: linear-gradient(45deg, #00bcd4, #4caf50);
+            border-radius: 4px;
+        }
+
+        select::-webkit-scrollbar-track {
+            background-color: #1a1a1a;
+        }
+
+        /* 針對 Firefox 的特殊樣式 */
+        select {
+            scrollbar-width: thin;
+            scrollbar-color: #00bcd4 #1a1a1a;
+        }
+
+        /* 確保選單展開時的背景色 */
+        select:focus option:checked {
+            background: linear-gradient(145deg, #383838, #303030);
+            color: #00bcd4;
+        }
+
+        /* 針對不同瀏覽器的選項樣式統一 */
+        @-moz-document url-prefix() {
+            select option {
+                background-color: #2d2d2d;
+            }
+            select option:hover {
+                background-color: #383838;
+                color: #00bcd4;
+            }
+        }
+
+        @media screen and (-webkit-min-device-pixel-ratio: 0) {
+            select option {
+                background-color: #2d2d2d;
+            }
+            select option:hover {
+                background-color: #383838;
+                color: #00bcd4;
+            }
+        }
+
+        /* 更新輸入框的樣式 */
+        .gacha-mechanics input {
+            width: 120px; /* 設置固定寬度 */
+            padding: 8px 12px;
+            font-size: 14px;
+            text-align: center; /* 數字置中 */
+        }
+
+        /* 抽卡機制區塊的布局優化 */
+        .gacha-mechanics .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px; /* 增加元素之間的間距 */
+            justify-content: flex-start; /* 左對齊 */
+        }
+
+        .gacha-mechanics .form-group {
+            flex: 0 0 auto; /* 不要自動擴展 */
+            margin-bottom: 15px;
+        }
+
+        /* 標籤樣式優化 */
+        .gacha-mechanics label {
+            display: block;
+            margin-bottom: 6px;
+            color: #00bcd4;
+            font-size: 14px;
+        }
+
+        /* 輸入框的基本樣式 */
+        .gacha-mechanics input {
+            background: linear-gradient(145deg, #2a2a2a, #232323);
+            color: #e0e0e0;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        /* 輸入框懸浮和焦點效果 */
+        .gacha-mechanics input:hover {
+            border-color: rgba(0, 188, 212, 0.3);
+        }
+
+        .gacha-mechanics input:focus {
+            border-color: #00bcd4;
+            box-shadow: 0 0 10px rgba(0, 188, 212, 0.2);
+            outline: none;
+        }
+
+        /* 小數點輸入框（如基礎出貨率）可以稍微寬一點 */
+        .gacha-mechanics input[step="0.01"] {
+            width: 140px;
+        }
+
+        /* 確保數字輸入框的箭頭樣式統一 */
+        .gacha-mechanics input[type="number"]::-webkit-inner-spin-button,
+        .gacha-mechanics input[type="number"]::-webkit-outer-spin-button {
+            opacity: 1;
+            height: 24px;
+            margin-right: 4px;
+        }
+
+        /* 響應式調整 */
+        @media (max-width: 768px) {
+            .gacha-mechanics input {
+                width: 100%; /* 在移動端使用全寬 */
+            }
+            
+            .gacha-mechanics .form-group {
+                width: 100%;
+            }
+        }
+
+        /* 抽卡機制區塊的整體樣式 */
+        .gacha-mechanics {
+            background: linear-gradient(145deg, #2d2d2d, #252525);
+            border-radius: 12px;
+            padding: 25px;
+        }
+
+        /* 表單行布局 */
+        .gacha-mechanics .form-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        /* 表單組件樣式 */
+        .gacha-mechanics .form-group {
+            position: relative;
+        }
+
+        /* 標籤樣式 */
+        .gacha-mechanics label {
+            display: block;
+            color: #00bcd4;
+            font-size: 13px;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        /* 輸入框容器 */
+        .gacha-mechanics .input-container {
+            position: relative;
+            background: #1e1e1e;
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* 輸入框樣式 */
+        .gacha-mechanics input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: #e0e0e0;
+            font-size: 15px;
+            padding: 4px;
+            text-align: right;
+        }
+
+        /* 移除輸入框的預設樣式 */
+        .gacha-mechanics input::-webkit-inner-spin-button,
+        .gacha-mechanics input::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* 單位標籤樣式 */
+        .gacha-mechanics .unit {
+            color: #666;
+            font-size: 13px;
+            margin-left: 8px;
+            user-select: none;
+        }
+
+        /* 輸入框容器的懸浮效果 */
+        .gacha-mechanics .input-container:hover {
+            border-color: rgba(0, 188, 212, 0.3);
+            background: #222;
+        }
+
+        /* 輸入框容器的焦點效果 */
+        .gacha-mechanics .input-container:focus-within {
+            border-color: #00bcd4;
+            box-shadow: 0 0 0 1px #00bcd4;
+            background: #252525;
+        }
+
+        /* 微調按鈕容器 */
+        .gacha-mechanics .spinner {
+            display: flex;
+            flex-direction: column;
+            margin-left: 8px;
+        }
+
+        /* 微調按鈕樣式 */
+        .gacha-mechanics .spinner-button {
+            background: transparent;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 0;
+            font-size: 12px;
+            line-height: 1;
+            height: 12px;
+        }
+
+        .gacha-mechanics .spinner-button:hover {
+            color: #00bcd4;
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 1200px) {
+            .gacha-mechanics .form-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .gacha-mechanics .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>MEPay魔儲 - 遊戲抽卡成本計算器</h1>
+    
+    <div class="calculator">
+        <!-- 基本設定區塊 -->
+        <div class="form-section basic-settings">
+            <h2>基本設定</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="game">選擇遊戲</label>
+                    <select id="game" onchange="updateGameOptions()">
+                        <option value="genshin">原神</option>
+                        <option value="honkai-star-rail">崩壞：星穹鐵道</option>
+                        <option value="azur-lane">碧藍航線</option>
+                        <option value="blue-archive">藍色檔案</option>
+                        <option value="fgo">Fate/Grand Order</option>
+                        <option value="arknights">明日方舟</option>
+                        <option value="eternal-return">永恆輪迴</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="banner-type">抽卡池類型</label>
+                    <select id="banner-type">
+                        <option value="character">角色池</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 價格與優惠區塊 -->
+        <div class="form-section price-discount">
+            <h2>價格與優惠</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="recharge-option">儲值方案</label>
+                    <div class="select-container">
+                        <select id="recharge-option">
+                            <!-- 選項由 JavaScript 動態生成 -->
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="special-bonus">特殊儲值獎勵</label>
+                    <div class="select-container">
+                        <select id="special-bonus" onchange="updateBonusInput()">
+                            <option value="none">否</option>
+                            <option value="first-time">首儲雙倍獎勵</option>
+                            <option value="custom">自定義</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="discount-rate">MEPay折扣(%)</label>
+                    <div class="input-container">
+                        <input type="number" id="discount-rate" value="10" min="0" max="100">
+                        <span class="unit">%</span>
+                    </div>
+                </div>
+            </div>
+            <!-- 自定義獎勵的容器會在這裡動態插入 -->
+            <div id="custom-bonus-container" style="display: none;">
+                </div>
+            </div>
+            
+        <!-- 抽卡機制區塊 -->
+        <div class="form-section gacha-mechanics">
+            <h2>抽卡機制</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="pull-cost">單抽成本</label>
+                    <div class="input-container">
+                        <input type="number" id="pull-cost">
+                        <span class="unit" id="currency-unit">原石</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="pity-count">保底次數</label>
+                    <div class="input-container">
+                        <input type="number" id="pity-count">
+                        <span class="unit">抽</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="soft-pity">軟保底起始</label>
+                    <div class="input-container">
+                        <input type="number" id="soft-pity">
+                        <span class="unit">抽</span>
+        </div>
+                </div>
+                <div class="form-group">
+                    <label for="base-rate">基礎出貨率</label>
+                    <div class="input-container">
+                        <input type="number" id="base-rate" step="0.01">
+                        <span class="unit">%</span>
+                </div>
+                </div>
+                <div class="form-group">
+                    <label for="up-rate">UP率</label>
+                    <div class="input-container">
+                        <input type="number" id="up-rate" step="0.01">
+                        <span class="unit">%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 計算按鈕 -->
+        <div class="form-section">
+            <button onclick="calculateCost()" class="calculate-btn">計算成本</button>
+        </div>
+    </div>
+    
+    <!-- 結果顯示區域 -->
+    <div id="results" class="results" style="display: none;"></div>
+
+    <footer>
+        <p>© 2024 MEPay魔儲. 版權所有。</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
